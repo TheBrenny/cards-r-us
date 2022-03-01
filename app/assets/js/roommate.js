@@ -26,7 +26,7 @@ function createRoom(roommate) {
     roommate.send("createroom", {});
 }
 
-function joinRoom(roommate, roomId) {
+function joinRoom(roommate, roomID) {
     roommate.once("cards:roomexists", ({data}) => {
         if(data.success) {
             notifier.notify("Loading room now...", "success");
@@ -36,5 +36,5 @@ function joinRoom(roommate, roomId) {
         }
     });
 
-    roommate.send("roomexists", {id: room.id});
+    roommate.send("roomexists", {id: roomID});
 }
