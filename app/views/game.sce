@@ -13,7 +13,7 @@
     <div class="overlayContent">
         <div class="overflowScrollWrapper">
             <div class="overlayTitle">
-                <h1 id="roomTitle">[[ room.name ]]</h1>
+                <h1 id="roomTitle">[[ room.name ]] (<code>[[room.id]]</code>)</h1>
             </div>
             <hr>
             <!--
