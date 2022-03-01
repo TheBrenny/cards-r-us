@@ -3,5 +3,6 @@
     "git.autoStash": true,
     "files.associations": {
         "*.sce": "html"
-    }
+    },
+    "vscode-edge-devtools.webRoot": "${workspaceFolder}/app/"
 }

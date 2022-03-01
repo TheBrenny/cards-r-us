@@ -22,7 +22,7 @@ module.exports.helmet = {
     contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-            defaultSrc: ["'self'", "http:"],
+            defaultSrc: ["'self'", "http:", "ws:"],
             scriptSrc: [
                 "'self'",
                 // add any extra sources here!
