@@ -7,8 +7,8 @@ class Room {
         this.name = options?.name ?? new WordBuilder("aan").toString(" ");
         this.table = options?.table ?? {shape: "7", color: `#${(~~(Math.random() * 0xffffff)).toString(16).padStart(6, "0")}`};
         this.floor = options?.floor ?? `#${(~~(Math.random() * 0xffffff)).toString(16).padStart(6, "0")}`;
-        this.includeJokers = options?.includeJokers ?? true;
-        this.cards = Room.generateDeck(options?.deckCount ?? 1, this.includeJokers);
+        this.jokers = options?.jokers ?? 2;
+        this.cards = Room.generateDeck(options?.deckCount ?? 1, this.jokers);
         this.cards.cardsInDeck = this.cards.cardsInDeck.sort(() => Math.random() - 0.5);
         this._players = {}; // {name: {ws: socket, name: "..."}}
         this._spectators = [];
@@ -53,6 +53,7 @@ class Room {
         else if(messageType === "cardmove") {
             // update internal state
             let redraw = this.cards[message.cardID].moving !== message.moving;
+            redraw = redraw || this.cards[message.cardID].faceUp !== message.faceUp;
             Object.assign(this.cards[message.cardID], message);
             // propagate the message to all clients
             this.gss.sendToAll("cardmove", {...message, redraw});
@@ -94,7 +95,7 @@ class Room {
         return Object.values(this._players);
     }
 
-    static generateDeck(deckCount, includeJokers) {
+    static generateDeck(deckCount, jokers) {
         let cards = ["ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king"];
         let suits = ["club", "diamond", "heart", "spade"];
         let decks = [...Array(deckCount)].map((_, i) => "deck" + (i + 1));
@@ -117,6 +118,19 @@ class Room {
                     ret.cardsInDeck.push(cardID);
                 }
             }
+        }
+        for(let j = 0; j < jokers; j++) {
+            cardID = `deck1.joker.joker${j}`;
+            ret[cardID] = {
+                cardID: cardID,
+                x: -Infinity,
+                y: -Infinity,
+                faceUp: false,
+                owner: null,
+                moving: false,
+                culprint: null
+            };
+            ret.cardsInDeck.push(cardID);
         }
 
         return ret;

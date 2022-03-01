@@ -32,13 +32,14 @@ const valueFace = {
     "joker": "🤡"
 };
 
-router.get("/card/back", (req,res) => {
+router.get("/card/back", (req, res) => {
     res.header("Content-Type", "image/svg+xml").sendFile(`${__dirname}/util/cardBack.svg`);
 });
 
 router.get("/card/:suit/:value", (req, res) => {
     let suit = req.params.suit;
     let value = req.params.value;
+    if(value?.startsWith("joker")) value = "joker";
 
     let color = suitColors[suit];
     let face = valueFace[value];
