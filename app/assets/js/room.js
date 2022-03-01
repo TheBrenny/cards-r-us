@@ -9,8 +9,6 @@ const cardHeight = cardWidth * cardRatio;
 
 const halfPi = Math.PI / 2;
 
-const clickTimer = 200;
-
 class Canvas {
     constructor(canvas, gameState) {
         this.canvas = canvas;
@@ -212,10 +210,12 @@ onReady(() => {
         gameState.table = data.table;
         gameState.floor = data.floor;
         gameState.cards = data.cards;
-        gameState.ready = true;
+
+        gameState.cardOrder = gameState.cards.cardsInDeck;
 
         if(gameState.players.includes(thePlayer)) gameState.players.unshift(gameState.players.splice(gameState.players.indexOf(thePlayer), 1)[0]);
 
+        gameState.ready = true;
         canvas.redrawStoredCanvas();
     });
     room.on("cards:cardmove", ({data}) => {
@@ -303,17 +303,6 @@ onReady(() => {
         }
     };
     mouse.onClick = () => {
-        // FIXME: Debug mode!
-
-        room.send("drawcard", {
-            x: mouse.x / canvas.canvas.width - 0.5,
-            y: mouse.y / canvas.canvas.height - 0.5,
-            owner: thePlayer,
-            faceUp: true,
-        });
-        return;
-
-        // FIXME: Debug mode!
         if(mouse.card) {
             let card = mouse.card;
             room.send("cardmove", {
@@ -365,19 +354,22 @@ function showOverlay() {
 
 function getCardAt(x, y, normalised = false) {
     let card = null;
+
     if(!normalised) {
         x = x / canvas.canvas.width - 0.5;
         y = y / canvas.canvas.height - 0.5;
     }
 
+    let dims = {w: cardWidth / canvas.canvas.width, h: cardHeight / canvas.canvas.height};
+
     for(let i = gameState.cardOrder.length - 1; i >= 0; i--) {
         let cardID = gameState.cardOrder[i];
         let card = gameState.cards[cardID];
-        if(card.x <= x && card.x + cardWidth >= x && card.y <= y && card.y + cardHeight >= y) {
+        if(card.x <= x && card.x + dims.w >= x && card.y <= y && card.y + dims.h >= y) {
             return [card, i];
         }
     }
-    return null;
+    return [null, -1];
 }
 
 const cardImages = {};
