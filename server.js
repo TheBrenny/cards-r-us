@@ -14,6 +14,7 @@
     const helmet = require("helmet");
     const cors = require("cors");
     const gss = require("./game/gss");
+    const RoomMate = require("./game/room").RoomMate;
 
     // Make the app
     let app = express();
@@ -46,6 +47,7 @@
         console.log(`Server is listening at http://${serverInfo.host}:${serverInfo.port}...`);
     });
     gss.setup(server);
+    new RoomMate({});
 })().catch(err => {
     console.error(err);
     process.exit(1);

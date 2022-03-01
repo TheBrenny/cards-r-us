@@ -7,6 +7,14 @@ class GameSocketServer {
 
         if(!!options.onOpen) this.socketServer.on("listening", options.onOpen.bind(this));
         if(!!options.onConnection) this.socketServer.on("connection", options.onConnection.bind(this));
+        if(!!options.onHandleMessage) this.socketServer.on("connection", (ws, req) => {
+            ws.on("message", (event) => {
+                let msg = event.toString();
+                console.log(msg);
+                msg = msg.split(":");
+                if(msg[0] == "cards") options.onHandleMessage(ws, msg[1], JSON.parse(msg.slice(2).join(":")));
+            });
+        });
         if(!!options.onError) this.socketServer.on("error", options.onError.bind(this));
         if(!!options.onClose) this.socketServer.on("close", options.onClose.bind(this));
         if(!!options.onHeaders) this.socketServer.on("headers", options.onHeaders.bind(this));
@@ -27,7 +35,7 @@ class GameSocketServer {
             console.trace(`[GameSocketServer:${this.id}] Warning: messageType is undefined, sending as 'unknown'`);
         }
         if(typeof message === "object") message = JSON.stringify(message);
-        socket.send(`gss:${messageType}:${message}`);
+        socket.send(`cards:${messageType}:${message}`);
     }
 
     sendToAll(messageType, message) {
@@ -55,12 +63,10 @@ const registeredListeners = {
 
 let expressServer;
 let isSetUp = false;
-let roommateGSS;
 
-function setup(server, roommateID, forceRecreate = false) {
+function setup(server, forceRecreate = false) {
     if(isSetUp && !forceRecreate) return;
-    
-    roommateGSS = registerNewSocketServer(roommateID);
+
     isSetUp = true;
     expressServer = server;
 
@@ -88,7 +94,7 @@ function handleUpgrade(req, sock, head) {
         socket.handleUpgrade(req, sock, head);
     } else {
         sock.write("HTTP/1.1 404 Not Found\r\n\r\n");
-        sock.end().destroy({code: 404, reason: "Server not found"});
+        sock.end().destroy();
     }
 }
 
