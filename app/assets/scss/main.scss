@@ -1,41 +1,146 @@
-// https://coolors.co/1d8ac4-d69f40-bae617-cc3e1d-222222
-$blue: #1D8Ac4; // Background
-$green: #BAE617; // Green means go!
-$red: #CC3E1D; // Red is bad!
-$orange: #D69F40;
-
-$navActive: $orange;
-$navHover: scale-color($navActive, $lightness: -20%);
-$navInactive: scale-color($navActive, $lightness: -30%);
+$pistachio: #8acd6dff;
+$highlighted-pistachio: #5aa739ff;
+$tomato: #fe6448ff;
+$highlighted-tomato: #f42601ff;
 $black: #222222; // Text color
 $notblack: #444444;
-$white: #EFEFEF; // White could be accent?
-$grey: #AAAAAA; // White could be accent?
+$lightgrey: #cccccc;
+$grey: #aaaaaa; // White could be accent?
+$darkgrey: #777777;
+$white: #efefef; // White could be accent?
 // $alphawhite: change-color(#EFEFEF, $alpha: 0.2); // White could be accent?
 
-@import "mixins";
-
 html {
-    background: $blue;
+    background: $white;
     color: $black;
 }
 
-app {
+.homeContainer {
     display: flex;
     flex-flow: column;
-    margin: 1rem 2.5rem;
-    gap: 1rem;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
 
-    @include desktop {
-        max-width: calc(1024px - 2.5rem * 2);
-        margin: 1rem auto;
+    .wrapper {
+        width: 40%;
+        display: flex;
+        flex-flow: row;
+        justify-content: center;
+        gap: 1em;
+        flex-grow: 0.2;
+
+        .left,
+        .right {
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+            flex: 1 1 0;
+            gap: 0.5em;
+
+            > * {
+                padding: 0;
+                height: 3.25em;
+            }
+        }
+        vr {
+            align-self: stretch;
+        }
+
+        input[type="text"] {
+            text-align: center;
+        }
     }
 }
 
-.hr {
-    border-bottom: 1.25px solid $black;
-    width: 90%;
-    align-self: center;
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-flow: row;
+
+    .overlayContent {
+        max-width: 35%;
+        max-height: 50%;
+        background: $grey;
+        display: flex;
+        flex: 1 1 0;
+        overflow-y: auto;
+        border-radius: 1em;
+        flex-flow: column;
+        padding: 2em;
+        box-shadow: 0px 0px 75px 10px rgba(0, 0, 0, 0.2);
+
+        .overflowScrollWrapper {
+            overflow-y: auto;
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+            align-items: center;
+
+            .overlayButtons {
+                display: flex;
+                flex-flow: column;
+                gap: 1em;
+                margin-top: 1em;
+
+                input[type="text"] {
+                    text-align: center;
+                }
+            }
+        }
+        hr {
+            margin: 0;
+            width: 100%;
+        }
+    }
+}
+
+hr {
+    margin: 1em 0;
+    border: none;
+    background: rgb(254, 100, 72);
+    background: linear-gradient(
+        90deg,
+        rgba(254, 100, 72, 0) 0%,
+        rgba(254, 100, 72, 1) 20%,
+        rgba(254, 100, 72, 1) 40%,
+        rgba(255, 209, 71, 1) 70%,
+        rgba(255, 209, 71, 0) 100%
+    );
+    height: 1px;
+    opacity: 0.75;
+    margin-left: attr(offset px, 0px);
+
+    &.flip {
+        transform: rotate(180deg);
+    }
+}
+vr {
+    border: none;
+    background: rgb(254, 100, 72);
+    background: linear-gradient(
+        180deg,
+        rgba(254, 100, 72, 0) 0%,
+        rgba(254, 100, 72, 1) 20%,
+        rgba(254, 100, 72, 1) 40%,
+        rgba(255, 209, 71, 1) 70%,
+        rgba(255, 209, 71, 0) 100%
+    );
+    width: 1px;
+    opacity: 0.75;
+    margin-top: attr(offset px, 0px);
+
+    &.flip {
+        transform: rotate(180deg);
+    }
 }
 
 .felx-br {
@@ -48,48 +153,8 @@ blockquote.error {
     padding: 1rem 1.5rem;
     border-left: 0.5rem solid;
     border-radius: 0.5rem;
-    border-image: linear-gradient(to bottom, $orange, $red) 1 100%;
+    border-image: linear-gradient(to bottom, $highlighted-tomato, $tomato) 1 100%;
     color: $notblack;
-}
-
-.flex {
-    display: flex;
-}
-
-div.navbar {
-    margin-bottom: 0.5rem;
-    flex-flow: row;
-    justify-content: space-evenly;
-
-    &>.navbarItem {
-        flex-grow: 0.175;
-        text-align: center;
-        border-radius: 0 0 1em 1em;
-        background: $navInactive;
-        // background: change-color($orange, $alpha: 0.5);
-        line-height: 3em;
-        height: 3em;
-        font-size: 1rem;
-        cursor: pointer;
-
-        &.active {
-            background: $navActive;
-        }
-
-        &:not(.active):hover {
-            background: $navHover;
-        }
-    }
-
-    @include tablet {
-        &.open {
-            flex-flow: column;
-        }
-
-        &.closed>.navbarItem {
-            display: none;
-        }
-    }
 }
 
 input,
@@ -101,7 +166,7 @@ textarea {
     display: block;
     box-sizing: border-box;
     transition: border 0.2s;
-    border-bottom: 0.2em solid rgba($green, 0);
+    border-bottom: 0.2em solid rgba($notblack, 0);
 
     &[disabled] {
         color: $notblack;
@@ -110,25 +175,29 @@ textarea {
 
         &:hover,
         &:focus {
-            border-bottom: 0.2em solid $red !important;
+            border-bottom: 0.2em solid $tomato !important;
         }
     }
 
     &:hover,
     &:focus {
-        border-bottom: 0.2em solid $green;
+        border-bottom: 0.2em solid $notblack;
         outline: none;
     }
 }
 
 .btn,
 input[type="submit"] {
-    background: $green;
+    background: $pistachio;
     padding: 1rem;
     border-radius: 0.6rem;
     transition: 0.2s ease-out;
+    -ms-user-select: none;
+    -webkit-user-select: none;
     user-select: none;
     text-align: center;
+    text-decoration: none;
+    color: $black;
 
     display: flex;
     justify-content: center;
@@ -147,12 +216,71 @@ input[type="submit"] {
     }
 
     &.red {
-        background: $red;
+        background: $tomato;
     }
 }
 
-.contactForm {
+.errorWrapper {
+    display: flex;
     flex-flow: column;
-    width: 100%;
-    gap: 1em;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    gap: 3em;
+
+    a.btn {
+        width: 200px;
+    }
+}
+
+#error {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+
+    box-shadow: 0 5px 10px $darkgrey;
+    background-color: $white;
+
+    width: 70%;
+    max-width: 1020px;
+    border-radius: 5px;
+    padding: 20px;
+
+    .preWrap {
+        background: $lightgrey;
+        border-radius: 0.5em;
+        box-shadow: inset -5px 0 20px -5px $darkgrey;
+        padding-bottom: 0.6em;
+
+        pre {
+            overflow-x: scroll;
+            padding: 1em;
+            padding-bottom: 0.5em;
+            color: $darkgrey;
+
+            &::-webkit-scrollbar {
+                width: 0.75em;
+                height: 0.75em;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background-color: $grey;
+                border-radius: 10em;
+                margin: 2em;
+
+                &:hover {
+                    background-color: $darkgrey;
+                }
+            }
+
+            &::-webkit-scrollbar-button {
+                background: transparent;
+                width: 1em;
+            }
+
+            span.highlight {
+                color: $black;
+            }
+        }
+    }
 }
