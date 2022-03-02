@@ -6,6 +6,9 @@
     const config = require("./config");
     const serverInfo = config.serverInfo;
 
+    const mws = require("mini-word-smith/build");
+    mws.downloadWordLists(300, 300);
+
     // Load important modules
     const express = require("express");
     const scetch = require("scetch")();

@@ -1,5 +1,5 @@
 const gss = require("./gss");
-const WordBuilder = require("./util/wordGen");
+const WordBuilder = require("mini-word-smith");
 
 class Room {
     constructor(id, options = {}) {

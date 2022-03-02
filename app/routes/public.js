@@ -2,7 +2,7 @@ const router = require("express").Router();
 const {Room, RoomMate} = require("../../game/room");
 const gss = require("../../game/gss");
 const {errors} = require("./errors/404");
-const WordBuilder = require("../../game/util/wordGen");
+const WordBuilder = require("mini-word-smith");
 
 router.use((req, res, next) => {
     res.locals.roommate = RoomMate.roommateID;
