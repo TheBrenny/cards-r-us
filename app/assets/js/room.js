@@ -1,7 +1,8 @@
-const tableMargin = 20;
+const tableMargin = 40;
 const tablePadding = 40;
-const playerRadius = 75;
 const playerColor = "#00000033";
+const heroColor = "#ffffff33";
+let playerRadius = null;
 
 const cardRatio = 12 / 8;
 const cardWidth = 30;
@@ -88,37 +89,37 @@ class Canvas {
             this.storedCanvasCtx.fill();
 
             // Players
+            this.calculatePlayerRadius();
+            this.getPlayerPositions();
+            let ppEntries = Object.entries(playerPositions);
+            let pp;
             let numPlayers = this.gameState.players.length;
-            let radius = Math.min(this.canvas.width / 2, this.canvas.height / 2) - tableMargin - tablePadding;
-            let angle = 2 * Math.PI / numPlayers;
-            let x;
-            let y;
             for(let i = 0; i < numPlayers; i++) {
-                x = this.canvas.width / 2 + radius * Math.cos(i * angle + halfPi);
-                y = this.canvas.height / 2 + radius * Math.sin(i * angle + halfPi);
+                pp = ppEntries[i][1]; // the {x, y} object
                 this.storedCanvasCtx.fillStyle = playerColor;
                 this.storedCanvasCtx.beginPath();
-                this.storedCanvasCtx.arc(x, y, playerRadius, 0, 2 * Math.PI);
+                this.storedCanvasCtx.arc(pp.x, pp.y, playerRadius, 0, 2 * Math.PI);
                 this.storedCanvasCtx.fill();
             }
             this.storedCanvasCtx.restore();
             for(let i = 0; i < numPlayers; i++) {
-                let player = this.gameState.players[i];
-                x = this.canvas.width / 2 + radius * Math.cos(i * angle + halfPi);
-                y = this.canvas.height / 2 + radius * Math.sin(i * angle + halfPi);
+                pp = ppEntries[i];
                 this.storedCanvasCtx.fillStyle = "#fff";
                 this.storedCanvasCtx.font = "15px Rubik";
                 this.storedCanvasCtx.textAlign = "center";
-                this.storedCanvasCtx.fillText(player, x, y);
+                this.storedCanvasCtx.fillText(pp[0], pp[1].x, pp[1].y);
             }
 
             // Static cards
+            let backFace = await getCardImage("back");
             for(let i = 0; i < this.gameState.cardOrder.length; i++) {
                 let card = this.gameState.cards[this.gameState.cardOrder[i]];
                 if(card.moving) break; // don't draw moving cards
 
                 try {
-                    let cardImage = await getCardImage(card.faceUp ? card.cardID : "back");
+                    let cardImage;
+                    if(canPlayerSeeCard(thePlayer, card)) cardImage = await getCardImage(card.cardID);
+                    else cardImage = backFace;
                     this.storedCanvasCtx.drawImage(cardImage, this.canvas.width / 2 + card.x * this.canvas.width, this.canvas.height / 2 + card.y * this.canvas.height, cardWidth, cardHeight);
                 } catch(e) {
                     notifier.notify("Something went wrong: " + e.message, "error");
@@ -146,11 +147,34 @@ class Canvas {
         window.requestAnimationFrame(this.render.bind(this));
     }
 
+    calculatePlayerRadius() {
+        let np = this.gameState.players.length;
+        let m = Math.min(this.canvas.width, this.canvas.height);
+        playerRadius = m / (np + 2.2);
+    }
+    getPlayerPositions() {
+        if(playerPositions !== null) return playerPositions;
+        playerPositions = {};
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        let numPlayers = this.gameState.players.length;
+        let radius = Math.min(width / 2, height / 2) - tableMargin - tablePadding;
+        let angle = 2 * Math.PI / numPlayers;
+        let x, y;
+        for(let i = 0; i < numPlayers; i++) {
+            x = width / 2 + radius * Math.cos(i * angle + halfPi);
+            y = height / 2 + radius * Math.sin(i * angle + halfPi);
+            playerPositions[this.gameState.players[i]] = {x, y};
+        }
+    }
+
     redrawStoredCanvas() {
         this.storedCanvasRedraw = true;
     }
 
     resize() {
+        playerPositions = null;
+        playerRadius = null;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.storedCanvas.width = this.canvas.width;
@@ -192,6 +216,7 @@ let mouse = {x: 0, y: 0, isDown: false, card: null, onDown() {}, onUp() {}, onCl
 // TODO: player zones so we can move cards between hands!
 
 let thePlayer;
+let playerPositions = null; // {playerID: {x: 0, y: 0}}
 let canvas;
 
 onReady(() => {
@@ -205,6 +230,7 @@ onReady(() => {
     room.on("cards:state", ({data}) => {
         gameState.roomID = data.roomID;
         gameState.name = data.name;
+        if(!isArrayCombination(gameState.players, data.players)) playerPositions = null;
         gameState.players = data.players;
         gameState.spectators = data.spectators;
         gameState.table = data.table;
@@ -213,7 +239,7 @@ onReady(() => {
 
         gameState.cardOrder = gameState.cards.cardsInDeck;
 
-        if(gameState.players.includes(thePlayer)) gameState.players.unshift(gameState.players.splice(gameState.players.indexOf(thePlayer), 1)[0]);
+        // if(gameState.players.includes(thePlayer)) gameState.players.unshift(gameState.players.splice(gameState.players.indexOf(thePlayer), 1)[0]);
 
         gameState.ready = true;
         canvas.redrawStoredCanvas();
@@ -274,7 +300,6 @@ onReady(() => {
     mouse.onDown = () => {
         let [card, i] = getCardAt(mouse.x, mouse.y);
         mouse.card = card;
-        //TODO: draw card if down in deck zone
     };
     mouse.onMove = (oldPos) => {
         if(mouse.card && mouse.isDown) {
@@ -287,6 +312,7 @@ onReady(() => {
                 y: cy,
                 owner: null,
                 moving: true,
+                faceUp: card.faceUp,
                 culprit: thePlayer,
             });
         }
@@ -297,6 +323,7 @@ onReady(() => {
             room.send("cardmove", {
                 cardID: card.cardID,
                 moving: false,
+                faceUp: card.faceUp,
                 culprit: null,
             });
             mouse.card = null;
@@ -372,6 +399,21 @@ function getCardAt(x, y, normalised = false) {
     return [null, -1];
 }
 
+function canPlayerSeeCard(player, card) {
+    if(playerPositions === null) return false;
+
+    for(let pp of Object.entries(playerPositions)) {
+        let [playerName, position] = pp;
+        let [cx, cy] = revertCoords(card.x, card.y);
+        cx += cardWidth / 2;
+        cy += cardHeight / 2;
+        if(Math.sqrt(Math.pow(position.x - cx, 2) + Math.pow(position.y - cy, 2)) < playerRadius) {
+            return player === playerName; // Make sure all the cards in my hand are face up, but if in someone else's hand, face down
+        }
+    }
+    return card.faceUp;
+}
+
 const cardImages = {};
 function getCardImage(cardID) {
     return new Promise((resolve, reject) => {
@@ -392,4 +434,37 @@ function getCardImage(cardID) {
             reject(ev);
         });
     });
+}
+
+// Determines if array a is a combination of array b
+function isArrayCombination(a, b) {
+    if(a.length !== b.length) return false;
+
+    a = a.slice();
+    b = b.slice();
+
+    for(let i = 0; i < a.length; i++) {
+        let index = b.indexOf(a[i]);
+        if(index === -1) return false;
+        b.splice(index, 1);
+    }
+
+    return true;
+}
+
+function normaliseCoords(x, y) {
+    if(Array.isArray(x)) [x, y] = x;
+    return [x / canvas.canvas.width - 0.5, y / canvas.canvas.height - 0.5];
+}
+function revertCoords(x, y) {
+    if(Array.isArray(x)) [x, y] = x;
+    return [(x + 0.5) * canvas.canvas.width, (y + 0.5) * canvas.canvas.height];
+}
+
+function inBounds(ax, ay, aw, ah, bx, by, type = "center") {
+    if(type === "center") {
+        ax += aw / 2;
+        ay += ah / 2;
+    }
+    return ax >= bx && ax <= bx + aw && ay >= by && ay <= by + ah;
 }
