@@ -96,7 +96,7 @@ class Canvas {
             let numPlayers = this.gameState.players.length;
             for(let i = 0; i < numPlayers; i++) {
                 pp = ppEntries[i][1]; // the {x, y} object
-                this.storedCanvasCtx.fillStyle = playerColor;
+                this.storedCanvasCtx.fillStyle = ppEntries[i][0] === thePlayer ? heroColor : playerColor;
                 this.storedCanvasCtx.beginPath();
                 this.storedCanvasCtx.arc(pp.x, pp.y, playerRadius, 0, 2 * Math.PI);
                 this.storedCanvasCtx.fill();

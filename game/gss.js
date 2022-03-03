@@ -10,7 +10,6 @@ class GameSocketServer {
         if(!!options.onHandleMessage) this.socketServer.on("connection", (ws, req) => {
             ws.on("message", (event) => {
                 let msg = event.toString();
-                console.log(msg);
                 msg = msg.split(":");
                 if(msg[0] == "cards") options.onHandleMessage(ws, msg[1], JSON.parse(msg.slice(2).join(":")));
             });
