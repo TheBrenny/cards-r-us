@@ -3,7 +3,7 @@
 
     <head>
         <meta charset="UTF-8">
-        <title>IT Project 1</title>
+        <title>Card Games Are Fun!</title>
         <link rel="stylesheet" href="/assets/css/normalize.css">
         <link rel="stylesheet" href="/assets/css/main.css">
         <link rel="stylesheet" href="/assets/css/notifier.css">
