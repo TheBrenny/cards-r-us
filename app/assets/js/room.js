@@ -1,5 +1,6 @@
 const tableMargin = 40;
 const tablePadding = 40;
+let tableSize = null;
 const playerColor = "#00000033";
 const heroColor = "#ffffff33";
 let playerRadius = null;
@@ -20,6 +21,7 @@ class Canvas {
         this.ctx = canvas.getContext("2d", {alpha: false});
         this.storedCanvasCtx = this.storedCanvas.getContext("2d", {alpha: false});
         this.gameState = gameState;
+        this.resize();
         this.renderSplash();
     }
 
@@ -63,11 +65,11 @@ class Canvas {
             // Table
             this.storedCanvasCtx.fillStyle = this.gameState.table.color;
             this.storedCanvasCtx.beginPath();
-            if(gameState.table.shape === "circle") this.storedCanvasCtx.arc(this.canvas.width / 2, this.canvas.height / 2, Math.min(this.canvas.width, this.canvas.height) / 2 - tableMargin, 0, 2 * Math.PI);
+            if(gameState.table.shape === "circle") this.storedCanvasCtx.arc(this.canvas.width / 2, this.canvas.height / 2, tableSize / 2 - tableMargin, 0, 2 * Math.PI);
             else {
                 let numPoints = Math.max(4, parseInt(this.gameState.table.shape)); // min 4 points
                 let angle = 2 * Math.PI / numPoints;
-                let radius = Math.min(this.canvas.width / 2, this.canvas.height / 2);
+                let radius = tableSize / 2;
 
                 let x = this.canvas.width / 2 + radius * Math.cos(0);
                 let y = this.canvas.height / 2 + radius * Math.sin(0);
@@ -85,7 +87,7 @@ class Canvas {
             // Table cloth
             this.storedCanvasCtx.fillStyle = "#FFFFFF33";
             this.storedCanvasCtx.beginPath();
-            this.storedCanvasCtx.arc(this.canvas.width / 2, this.canvas.height / 2, Math.min(this.canvas.width, this.canvas.height) / 2 - tableMargin - tablePadding, 0, 2 * Math.PI);
+            this.storedCanvasCtx.arc(this.canvas.width / 2, this.canvas.height / 2, tableSize / 2 - tableMargin - tablePadding, 0, 2 * Math.PI);
             this.storedCanvasCtx.fill();
 
             // Players
@@ -179,6 +181,7 @@ class Canvas {
         this.canvas.height = window.innerHeight;
         this.storedCanvas.width = this.canvas.width;
         this.storedCanvas.height = this.canvas.height;
+        tableSize = Math.min(this.canvas.width, this.canvas.height);
         this.redrawStoredCanvas();
     }
 }
@@ -228,6 +231,10 @@ onReady(() => {
     // Prepare room and events
     const room = new GameSocketClient(roomID);
     room.on("cards:state", ({data}) => {
+        if(data.success === false) {
+            console.error(data.message);
+            return;
+        }
         gameState.roomID = data.roomID;
         gameState.name = data.name;
         if(!isArrayCombination(gameState.players, data.players)) playerPositions = null;
@@ -245,6 +252,10 @@ onReady(() => {
         canvas.redrawStoredCanvas();
     });
     room.on("cards:cardmove", ({data}) => {
+        if(data.success === false) {
+            console.error(data.message);
+            return;
+        }
         let card = gameState.cards[data.cardID];
         card.cardID = data.cardID;
         card.x = data.x ?? card.x;
@@ -260,17 +271,17 @@ onReady(() => {
 
         if(data.redraw) canvas.redrawStoredCanvas();
     });
-    room.on("cards:drawcard", ({data}) => {
-        if(data.success === false) {
-            notifier.notify(data.message, "error");
-            return;
-        }
+    // TODO: Remove this because it's not used!
+    // room.on("cards:drawcard", ({data}) => {
+    //     if(data.success === false) {
+    //         notifier.notify(data.message, "error");
+    //         return;
+    //     }
 
-        // TODO: if thePlayer drew this card, set mouse.card to this card
-        gameState.cardOrder.push(data.cardID);
-        Object.assign(gameState.cards[data.cardID], data);
-        canvas.redrawStoredCanvas();
-    });
+    //     gameState.cardOrder.push(data.cardID);
+    //     Object.assign(gameState.cards[data.cardID], data);
+    //     canvas.redrawStoredCanvas();
+    // });
 
     // Prepare interactive events
     canvas.canvas.addEventListener("mousedown", (e) => {
@@ -307,6 +318,7 @@ onReady(() => {
             let cx = (mouse.x - cardWidth / 2) / canvas.canvas.width - 0.5;
             let cy = (mouse.y - cardHeight / 2) / canvas.canvas.height - 0.5;
             room.send("cardmove", {
+                name: thePlayer,
                 cardID: card.cardID,
                 x: cx,
                 y: cy,
@@ -321,6 +333,7 @@ onReady(() => {
         if(mouse.card && mouse.isDown) {
             let card = mouse.card;
             room.send("cardmove", {
+                name: thePlayer,
                 cardID: card.cardID,
                 moving: false,
                 faceUp: card.faceUp,
@@ -333,6 +346,7 @@ onReady(() => {
         if(mouse.card) {
             let card = mouse.card;
             room.send("cardmove", {
+                name: thenPlayer,
                 cardID: card.cardID,
                 moving: false,
                 culprit: null,
@@ -346,6 +360,7 @@ onReady(() => {
         btn.addEventListener("click", () => {
             let action = btn.getAttribute("action");
             if(action === "enterRoom") enterRoom(room, $(`#username`).value || $(`#username`).placeholder);
+            if(action === "spectate") spectate(room);
         });
     });
 });
@@ -363,6 +378,18 @@ function enterRoom(room, name) {
         }
     });
     room.send("enterroom", {name});
+}
+function spectate(room) {
+    room.once("cards:spectate", ({data}) => {
+        if(data.success) {
+            notifier.notify("Spectating...", "success");
+            hideOverlay();
+            canvas.redrawStoredCanvas();
+        } else {
+            notifier.notify(data.message, "error");
+        }
+    });
+    room.send("spectate", {});
 }
 
 function hideOverlay() {

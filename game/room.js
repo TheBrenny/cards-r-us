@@ -36,6 +36,16 @@ class Room {
     }
 
     handleMessage(ws, messageType, message) {
+        if(messageType === "spectate") {
+            this._spectators.push(ws);
+            this.gss.send(ws, "spectate", {success: true});
+            this.gss.send(ws, "state", this.state);
+        }
+
+        if(message.name == null) {
+            this.gss.send(ws, messageType, {success: false, message: "Spectators cannot interact with the game!"});
+            return;
+        }
         if(messageType === "enterroom") {
             try {
                 this.addPlayer(ws, message.name);
@@ -44,11 +54,6 @@ class Room {
             } catch(e) {
                 this.gss.send(ws, "enterroom", {success: false, message: e.message});
             }
-        }
-        else if(messageType === "spectate") {
-            this._spectators.push(ws);
-            this.gss.send(ws, "spectate", {success: true});
-            this.gss.sendToAll("state", this.state);
         }
         else if(messageType === "cardmove") {
             // update internal state

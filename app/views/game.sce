@@ -16,14 +16,11 @@
                 <h1 id="roomTitle">[[ room.name ]] (<code>[[room.id]]</code>)</h1>
             </div>
             <hr>
-            <!--
-                <div class="overlayDescription">
-                    <p id="roomDescription">[[ room.description ]]</p>
-                </div>
-            -->
             <div class="overlayButtons">
                 <input id="username" type="text" placeholder="[[ namePlaceholder ]]">
                 <div class="btn" action="enterRoom">Join Game!</div>
+                <hr>
+                <div class="btn" action="spectate">Spectate</div>
             </div>
         </div>
     </div>
