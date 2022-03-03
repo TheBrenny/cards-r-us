@@ -5,6 +5,9 @@ const playerColor = "#00000033";
 const heroColor = "#ffffff33";
 let playerRadius = null;
 
+let debugMode = false;
+let debugCard = -1;
+
 const cardRatio = 12 / 8;
 const cardWidth = 30;
 const cardHeight = cardWidth * cardRatio;
@@ -80,9 +83,9 @@ class Canvas {
                     this.storedCanvasCtx.lineTo(x, y);
                 }
             }
+            this.storedCanvasCtx.fill();
             this.storedCanvasCtx.save();
             this.storedCanvasCtx.clip();
-            this.storedCanvasCtx.fill();
 
             // Table cloth
             this.storedCanvasCtx.fillStyle = "#FFFFFF33";
@@ -122,7 +125,8 @@ class Canvas {
                     let cardImage;
                     if(canPlayerSeeCard(thePlayer, card)) cardImage = await getCardImage(card.cardID);
                     else cardImage = backFace;
-                    this.storedCanvasCtx.drawImage(cardImage, this.canvas.width / 2 + card.x * this.canvas.width, this.canvas.height / 2 + card.y * this.canvas.height, cardWidth, cardHeight);
+                    let [cx, cy] = revertCoords(card.x, card.y);
+                    this.storedCanvasCtx.drawImage(cardImage, cx - cardWidth / 2, cy - cardHeight / 2, cardWidth, cardHeight);
                 } catch(e) {
                     notifier.notify("Something went wrong: " + e.message, "error");
                 }
@@ -140,9 +144,52 @@ class Canvas {
 
             try {
                 let cardImage = await getCardImage(card.faceUp ? card.cardID : "back");
-                this.ctx.drawImage(cardImage, this.canvas.width / 2 + card.x * this.canvas.width, this.canvas.height / 2 + card.y * this.canvas.height, cardWidth, cardHeight);
+                let [cx, cy] = revertCoords(card.x, card.y);
+                this.ctx.drawImage(cardImage, cx - cardWidth / 2, cy - cardHeight / 2, cardWidth, cardHeight);
             } catch(e) {
                 notifier.notify("Something went wrong: " + e.message, "error");
+            }
+        }
+
+        if(debugMode) {
+            let line = 1;
+            this.ctx.fillStyle = "#0005";
+            this.ctx.fillRect(0, 0, 300, 540);
+
+            this.ctx.fillStyle = "#fff";
+            this.ctx.font = "15px Consolas";
+            this.ctx.textAlign = "left";
+            this.ctx.fillText("Debug Mode", 10, line++ * 20);
+            this.ctx.fillText("Player: " + thePlayer, 10, line++ * 20);
+            this.ctx.fillText("Table: " + this.gameState.table.shape + " " + this.gameState.table.color, 10, line++ * 20);
+            this.ctx.fillText("Table Size: " + tableSize, 10, line++ * 20);
+            this.ctx.fillText("Table Margin: " + tableMargin, 10, line++ * 20);
+            this.ctx.fillText("Table Padding: " + tablePadding, 10, line++ * 20);
+            this.ctx.fillText("Player Radius: " + playerRadius.toFixed(5), 10, line++ * 20);
+            this.ctx.fillText("Card Width: " + cardWidth, 10, line++ * 20);
+            this.ctx.fillText("Card Height: " + cardHeight, 10, line++ * 20);
+            line++;
+            this.ctx.fillText("Mouse x (real): " + mouse.x, 10, line++ * 20);
+            this.ctx.fillText("Mouse y (real): " + mouse.y, 10, line++ * 20);
+            let [nx, ny] = normaliseCoords(mouse.x, mouse.y);
+            this.ctx.fillText("Mouse x (norm): " + nx.toFixed(5), 10, line++ * 20);
+            this.ctx.fillText("Mouse y (norm): " + ny.toFixed(5), 10, line++ * 20);
+            let [rx, ry] = revertCoords(nx, ny);
+            this.ctx.fillText("Mouse x (revert): " + rx.toFixed(5), 10, line++ * 20);
+            this.ctx.fillText("Mouse y (revert): " + ry.toFixed(5), 10, line++ * 20);
+            line++;
+            if(debugCard === -1) this.ctx.fillText("Press (c) for cards", 10, line++ * 20);
+            else {
+                let card = this.gameState.cards[this.gameState.cardOrder[debugCard]];
+                this.ctx.fillText("Card: " + card.cardID + ` [${debugCard}]`, 10, line++ * 20);
+                this.ctx.fillText("Card x: " + card.x.toFixed(5), 10, line++ * 20);
+                this.ctx.fillText("Card y: " + card.y.toFixed(5), 10, line++ * 20);
+                this.ctx.fillText("Card dims (real): " + `[${cardWidth.toFixed(3)}, ${cardHeight.toFixed(3)}]`, 10, line++ * 20);
+                this.ctx.fillText("Card dims (real): " + `[${(cardWidth / tableSize).toFixed(3)}, ${(cardHeight / tableSize).toFixed(3)}]`, 10, line++ * 20);
+                this.ctx.fillText("Card faceUp: " + card.faceUp, 10, line++ * 20);
+                this.ctx.fillText("Card moving: " + card.moving, 10, line++ * 20);
+                this.ctx.fillText("Card owner: " + card.owner, 10, line++ * 20);
+                this.ctx.fillText("Card visible: " + canPlayerSeeCard(thePlayer, card), 10, line++ * 20);
             }
         }
 
@@ -221,6 +268,7 @@ let mouse = {x: 0, y: 0, isDown: false, card: null, onDown() {}, onUp() {}, onCl
 let thePlayer;
 let playerPositions = null; // {playerID: {x: 0, y: 0}}
 let canvas;
+let overlayHidden = false;
 
 onReady(() => {
     let roomID = window.location.pathname.split("/")[2];
@@ -284,14 +332,16 @@ onReady(() => {
     // });
 
     // Prepare interactive events
-    canvas.canvas.addEventListener("mousedown", (e) => {
+    document.addEventListener("mousedown", (e) => {
+        if(!overlayHidden) return;
         mouse.x = e.offsetX;
         mouse.y = e.offsetY;
         mouse.isDown = true;
         mouse.down = {x: mouse.x, y: mouse.y};
         mouse.onDown();
     });
-    canvas.canvas.addEventListener("mouseup", (e) => {
+    document.addEventListener("mouseup", (e) => {
+        if(!overlayHidden) return;
         if(mouse.isDown && mouse.x === mouse.down.x && mouse.y === mouse.down.y) {
             mouse.onClick();
         } else {
@@ -301,11 +351,30 @@ onReady(() => {
         }
         mouse.isDown = false;
     });
-    canvas.canvas.addEventListener("mousemove", (e) => {
+    document.addEventListener("mousemove", (e) => {
+        if(!overlayHidden) return;
         let oldPos = {x: mouse.x, y: mouse.y};
         mouse.x = e.offsetX;
         mouse.y = e.offsetY;
         mouse.onMove(oldPos);
+    });
+    document.addEventListener("keydown", (e) => {
+        if(!overlayHidden) return;
+        if(e.key === "g") {
+            e.preventDefault();
+            e.stopPropagation();
+            debugMode = !debugMode;
+        }
+        if(e.key === "c" || e.key === "C") {
+            e.preventDefault();
+            e.stopPropagation();
+            let mod = 1;
+            if(e.shiftKey) mod = -1;
+            debugCard += mod;
+            debugCard = debugCard % (gameState.cardOrder.length + 1);
+            if(debugCard === gameState.cardOrder.length) debugCard = -1;
+            if(debugCard === -2) debugCard = gameState.cardOrder.length - 1;
+        }
     });
 
     mouse.onDown = () => {
@@ -315,8 +384,7 @@ onReady(() => {
     mouse.onMove = (oldPos) => {
         if(mouse.card && mouse.isDown) {
             let card = mouse.card;
-            let cx = (mouse.x - cardWidth / 2) / canvas.canvas.width - 0.5;
-            let cy = (mouse.y - cardHeight / 2) / canvas.canvas.height - 0.5;
+            let [cx, cy] = normaliseCoords(mouse.x, mouse.y);
             room.send("cardmove", {
                 name: thePlayer,
                 cardID: card.cardID,
@@ -346,7 +414,7 @@ onReady(() => {
         if(mouse.card) {
             let card = mouse.card;
             room.send("cardmove", {
-                name: thenPlayer,
+                name: thePlayer,
                 cardID: card.cardID,
                 moving: false,
                 culprit: null,
@@ -397,6 +465,7 @@ function hideOverlay() {
     overlay.style.opacity = "0";
     overlay.addEventListener("transitionend", () => {
         overlay.style.display = "none";
+        overlayHidden = true;
     }, {once: true});
 }
 
@@ -404,22 +473,18 @@ function showOverlay() {
     let overlay = $(`#overlay`);
     overlay.style.display = "";
     overlay.style.opacity = "1";
+    overlayHidden = false;
 }
 
 function getCardAt(x, y, normalised = false) {
-    let card = null;
+    if(!normalised) [x, y] = normaliseCoords(x, y);
 
-    if(!normalised) {
-        x = x / canvas.canvas.width - 0.5;
-        y = y / canvas.canvas.height - 0.5;
-    }
-
-    let dims = {w: cardWidth / canvas.canvas.width, h: cardHeight / canvas.canvas.height};
+    let dims = {w: cardWidth / tableSize, h: cardHeight / tableSize};
 
     for(let i = gameState.cardOrder.length - 1; i >= 0; i--) {
         let cardID = gameState.cardOrder[i];
         let card = gameState.cards[cardID];
-        if(card.x <= x && card.x + dims.w >= x && card.y <= y && card.y + dims.h >= y) {
+        if(inBounds(card.x, card.y, dims.w, dims.h, x, y)) {
             return [card, i];
         }
     }
@@ -427,6 +492,7 @@ function getCardAt(x, y, normalised = false) {
 }
 
 function canPlayerSeeCard(player, card) {
+    if(player === null) return true;
     if(playerPositions === null) return false;
 
     for(let pp of Object.entries(playerPositions)) {
@@ -481,12 +547,23 @@ function isArrayCombination(a, b) {
 
 function normaliseCoords(x, y) {
     if(Array.isArray(x)) [x, y] = x;
-    return [x / canvas.canvas.width - 0.5, y / canvas.canvas.height - 0.5];
+    let w = canvas.canvas.width;
+    let h = canvas.canvas.height;
+    return [
+        (x - w / 2) / tableSize,
+        (y - h / 2) / tableSize,
+    ];
 }
 function revertCoords(x, y) {
     if(Array.isArray(x)) [x, y] = x;
-    return [(x + 0.5) * canvas.canvas.width, (y + 0.5) * canvas.canvas.height];
+    let w = canvas.canvas.width;
+    let h = canvas.canvas.height;
+    return [
+        x * tableSize + w / 2,
+        y * tableSize + h / 2
+    ];
 }
+
 
 function inBounds(ax, ay, aw, ah, bx, by, type = "center") {
     if(type === "center") {

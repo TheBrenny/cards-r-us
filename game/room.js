@@ -115,8 +115,8 @@ class Room {
                     cardID = `${d}.${s}.${c}`;
                     ret[cardID] = {
                         cardID: cardID,
-                        x: -Infinity,
-                        y: -Infinity,
+                        x: 0,
+                        y: 0,
                         faceUp: false,
                         owner: null,
                         moving: false,
@@ -130,8 +130,8 @@ class Room {
             cardID = `deck1.joker.joker${j}`;
             ret[cardID] = {
                 cardID: cardID,
-                x: -Infinity,
-                y: -Infinity,
+                x: 0,
+                y: 0,
                 faceUp: false,
                 owner: null,
                 moving: false,
