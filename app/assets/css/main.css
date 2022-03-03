@@ -23,18 +23,34 @@ html {
   display: flex;
   flex-flow: column;
   justify-content: center;
-  flex: 1 1 0;
+  gap: 0.5em;
+  width: 100%;
+}
+.homeContainer .wrapper .left .miniWrap,
+.homeContainer .wrapper .right .miniWrap {
+  display: flex;
+  flex-flow: row;
+  justify-content: center;
+  align-items: center;
   gap: 0.5em;
 }
-.homeContainer .wrapper .left > *,
-.homeContainer .wrapper .right > * {
+.homeContainer .wrapper .left input,
+.homeContainer .wrapper .left .btn,
+.homeContainer .wrapper .right input,
+.homeContainer .wrapper .right .btn {
   padding: 0;
   height: 3.25em;
+  width: 100%;
 }
 .homeContainer .wrapper vr {
   align-self: stretch;
+  width: 3px;
 }
 .homeContainer .wrapper input[type=text] {
+  text-align: center;
+}
+.homeContainer .wrapper small {
+  color: #00000088;
   text-align: center;
 }
 

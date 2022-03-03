@@ -35,19 +35,35 @@ html {
             display: flex;
             flex-flow: column;
             justify-content: center;
-            flex: 1 1 0;
             gap: 0.5em;
+            width: 100%;
 
-            > * {
+            .miniWrap {
+                display: flex;
+                flex-flow: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5em;
+            }
+
+            input,
+            .btn {
                 padding: 0;
                 height: 3.25em;
+                width: 100%;
             }
         }
         vr {
             align-self: stretch;
+            width: 3px;
         }
 
         input[type="text"] {
+            text-align: center;
+        }
+
+        small {
+            color: #00000088;
             text-align: center;
         }
     }

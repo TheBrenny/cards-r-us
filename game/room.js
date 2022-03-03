@@ -5,10 +5,12 @@ class Room {
     constructor(id, options = {}) {
         this.id = id || generateRoomId();
         this.name = options?.name ?? new WordBuilder("aan").toString(" ");
-        this.table = options?.table ?? {shape: "7", color: `#${(~~(Math.random() * 0xffffff)).toString(16).padStart(6, "0")}`};
+        this.table = {};
+        this.table.shape = options?.table?.shape ?? "7";
+        this.table.color = options?.table?.color ?? `#${(~~(Math.random() * 0xffffff)).toString(16).padStart(6, "0")}`;
         this.floor = options?.floor ?? `#${(~~(Math.random() * 0xffffff)).toString(16).padStart(6, "0")}`;
-        this.jokers = options?.jokers ?? 2;
-        this.cards = Room.generateDeck(options?.deckCount ?? 1, this.jokers);
+        this.jokers = parseInt(options?.jokers ?? 2);
+        this.cards = Room.generateDeck(parseInt(options?.deckCount ?? 1), this.jokers);
         this.cards.cardsInDeck = this.cards.cardsInDeck.sort(() => Math.random() - 0.5);
         this._players = {}; // {name: {ws: socket, name: "..."}}
         this._spectators = [];
@@ -160,7 +162,7 @@ class RoomMate {
         if(messageType === "list") this.gss.send(ws, "list", RoomMate.getAllRooms());
         if(messageType === "createroom") {
             let id = message.id;
-            let room = new Room(id);
+            let room = new Room(id, message);
             this.gss.send(ws, "createroom", {success: true, roomID: room.id});
         }
         if(messageType === "roomexists") {

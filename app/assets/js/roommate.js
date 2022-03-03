@@ -23,7 +23,21 @@ function createRoom(roommate) {
             notifier.notify(data.message, "error");
         }
     });
-    roommate.send("createroom", {});
+    let payload = {};
+    if($("#createid").value !== "") roomID = $(`#createid`).value;
+    if($("#name").value !== "") payload.name = $(`#name`).value;
+    if($("#floor").value !== "") payload.floor = $(`#floor`).value;
+    if($("#tableshape").value !== "") {
+        payload.table = payload.table ?? {};
+        payload.table.shape = $(`#tableshape`).value;
+    }
+    if($("#tablecolor").value !== "") {
+        payload.table = payload.table ?? {};
+        payload.table.color = $(`#tablecolor`).value;
+    }
+    if($("#deckcount").value !== "") payload.deckCount = $(`#deckcount`).value;
+    if($("#jokers").value !== "") payload.jokers = $(`#jokers`).value;
+    roommate.send("createroom", payload);
 }
 
 function joinRoom(roommate, roomID) {
