@@ -152,44 +152,52 @@ class Canvas {
         }
 
         if(debugMode) {
-            let line = 1;
+            let lines = [];
+            lines.push("Debug Mode");
+            lines.push("Player: " + thePlayer);
+            lines.push("Table: " + this.gameState.table.shape + " " + this.gameState.table.color);
+            lines.push("Table Size: " + tableSize);
+            lines.push("Table Margin: " + tableMargin);
+            lines.push("Table Padding: " + tablePadding);
+            lines.push("Player Radius: " + playerRadius.toFixed(5));
+            lines.push("Card Width: " + cardWidth);
+            lines.push("Card Height: " + cardHeight);
+            lines.push("");
+            lines.push("Mouse x (real): " + mouse.x);
+            lines.push("Mouse y (real): " + mouse.y);
+            let [nx, ny] = normaliseCoords(mouse.x, mouse.y);
+            lines.push("Mouse x (norm): " + nx.toFixed(5));
+            lines.push("Mouse y (norm): " + ny.toFixed(5));
+            let [rx, ry] = revertCoords(nx, ny);
+            lines.push("Mouse x (revert): " + rx.toFixed(5));
+            lines.push("Mouse y (revert): " + ry.toFixed(5));
+            line++;
+            if(debugCard === -1) lines.push("Press (c) for cards");
+            else {
+                let card = this.gameState.cards[this.gameState.cardOrder[debugCard]];
+                lines.push("Card: " + card.cardID + ` [${debugCard}]`);
+                lines.push("Card r: " + card.r.toFixed(5));
+                lines.push("Card d: " + card.d.toFixed(5));
+                let [cx, cy] = fromPolar(card.r, card.d);
+                lines.push("Card x: " + cx.toFixed(5));
+                lines.push("Card y: " + cy.toFixed(5));
+                lines.push("Card dims (real): " + `[${cardWidth.toFixed(3)}, ${cardHeight.toFixed(3)}]`);
+                lines.push("Card dims (real): " + `[${(cardWidth / tableSize).toFixed(3)}, ${(cardHeight / tableSize).toFixed(3)}]`);
+                lines.push("Card faceUp: " + card.faceUp);
+                lines.push("Card moving: " + card.moving);
+                lines.push("Card owner: " + card.owner);
+                lines.push("Card visible: " + canPlayerSeeCard(thePlayer, card));
+            }
+
             this.ctx.fillStyle = "#0005";
-            this.ctx.fillRect(0, 0, 300, 540);
+            this.ctx.fillRect(0, 0, 300, lines.length * 20);
 
             this.ctx.fillStyle = "#fff";
             this.ctx.font = "15px Consolas";
             this.ctx.textAlign = "left";
-            this.ctx.fillText("Debug Mode", 10, line++ * 20);
-            this.ctx.fillText("Player: " + thePlayer, 10, line++ * 20);
-            this.ctx.fillText("Table: " + this.gameState.table.shape + " " + this.gameState.table.color, 10, line++ * 20);
-            this.ctx.fillText("Table Size: " + tableSize, 10, line++ * 20);
-            this.ctx.fillText("Table Margin: " + tableMargin, 10, line++ * 20);
-            this.ctx.fillText("Table Padding: " + tablePadding, 10, line++ * 20);
-            this.ctx.fillText("Player Radius: " + playerRadius.toFixed(5), 10, line++ * 20);
-            this.ctx.fillText("Card Width: " + cardWidth, 10, line++ * 20);
-            this.ctx.fillText("Card Height: " + cardHeight, 10, line++ * 20);
-            line++;
-            this.ctx.fillText("Mouse x (real): " + mouse.x, 10, line++ * 20);
-            this.ctx.fillText("Mouse y (real): " + mouse.y, 10, line++ * 20);
-            let [nx, ny] = normaliseCoords(mouse.x, mouse.y);
-            this.ctx.fillText("Mouse x (norm): " + nx.toFixed(5), 10, line++ * 20);
-            this.ctx.fillText("Mouse y (norm): " + ny.toFixed(5), 10, line++ * 20);
-            let [rx, ry] = revertCoords(nx, ny);
-            this.ctx.fillText("Mouse x (revert): " + rx.toFixed(5), 10, line++ * 20);
-            this.ctx.fillText("Mouse y (revert): " + ry.toFixed(5), 10, line++ * 20);
-            line++;
-            if(debugCard === -1) this.ctx.fillText("Press (c) for cards", 10, line++ * 20);
-            else {
-                let card = this.gameState.cards[this.gameState.cardOrder[debugCard]];
-                this.ctx.fillText("Card: " + card.cardID + ` [${debugCard}]`, 10, line++ * 20);
-                this.ctx.fillText("Card x: " + card.x.toFixed(5), 10, line++ * 20);
-                this.ctx.fillText("Card y: " + card.y.toFixed(5), 10, line++ * 20);
-                this.ctx.fillText("Card dims (real): " + `[${cardWidth.toFixed(3)}, ${cardHeight.toFixed(3)}]`, 10, line++ * 20);
-                this.ctx.fillText("Card dims (real): " + `[${(cardWidth / tableSize).toFixed(3)}, ${(cardHeight / tableSize).toFixed(3)}]`, 10, line++ * 20);
-                this.ctx.fillText("Card faceUp: " + card.faceUp, 10, line++ * 20);
-                this.ctx.fillText("Card moving: " + card.moving, 10, line++ * 20);
-                this.ctx.fillText("Card owner: " + card.owner, 10, line++ * 20);
-                this.ctx.fillText("Card visible: " + canPlayerSeeCard(thePlayer, card), 10, line++ * 20);
+            for(let line = 0; line < lines.length; line++) {
+                if(lines[line] === "") continue;
+                this.ctx.fillText(lines[line], 10, line * 20);
             }
         }
 
