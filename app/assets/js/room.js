@@ -101,7 +101,7 @@ class Canvas {
             let numPlayers = this.gameState.players.length;
             for(let i = 0; i < numPlayers; i++) {
                 pp = ppEntries[i][1]; // the {x, y} object
-                this.storedCanvasCtx.fillStyle = ppEntries[i][0] === thePlayer ? heroColor : playerColor;
+                this.storedCanvasCtx.fillStyle = ppEntries[i][0] === thePlayer?.name ? heroColor : playerColor;
                 this.storedCanvasCtx.beginPath();
                 this.storedCanvasCtx.arc(pp.x, pp.y, playerRadius, 0, 2 * Math.PI);
                 this.storedCanvasCtx.fill();
@@ -123,7 +123,7 @@ class Canvas {
 
                 try {
                     let cardImage;
-                    if(canPlayerSeeCard(thePlayer, card)) cardImage = await getCardImage(card.cardID);
+                    if(canISeeCard(card)) cardImage = await getCardImage(card.cardID);
                     else cardImage = backFace;
                     let [cx, cy] = revertCoords(card.x, card.y);
                     this.storedCanvasCtx.drawImage(cardImage, cx - cardWidth / 2, cy - cardHeight / 2, cardWidth, cardHeight);
@@ -154,7 +154,9 @@ class Canvas {
         if(debugMode) {
             let lines = [];
             lines.push("Debug Mode");
-            lines.push("Player: " + thePlayer);
+            lines.push("Player: " + thePlayer?.name ?? "Spect8or");
+            lines.push("Player Offset: " + thePlayer?.offset ?? 0);
+            lines.push("Offset Angle: " + playerOffsetAngle?.toFixed(5) ?? 0);
             lines.push("Table: " + this.gameState.table.shape + " " + this.gameState.table.color);
             lines.push("Table Size: " + tableSize);
             lines.push("Table Margin: " + tableMargin);
@@ -212,16 +214,23 @@ class Canvas {
     getPlayerPositions() {
         if(playerPositions !== null) return playerPositions;
         playerPositions = {};
+        let organisedPlayers;
+        if(thePlayer) {
+            let myPlayerIndex = this.gameState.players.findIndex(p => p.name === thePlayer.name);
+            organisedPlayers = this.gameState.players.slice(myPlayerIndex).concat(this.gameState.players.slice(0, myPlayerIndex));
+        } else {
+            organisedPlayers = this.gameState.players.slice().sort((a, b) => a.offset - b.offset);
+        }
         const width = this.canvas.width;
         const height = this.canvas.height;
-        let numPlayers = this.gameState.players.length;
+        let numPlayers = organisedPlayers.length;
         let radius = Math.min(width / 2, height / 2) - tableMargin - tablePadding;
-        let angle = 2 * Math.PI / numPlayers;
+        playerOffsetAngle = 2 * Math.PI / numPlayers;
         let x, y;
         for(let i = 0; i < numPlayers; i++) {
-            x = width / 2 + radius * Math.cos(i * angle + halfPi);
-            y = height / 2 + radius * Math.sin(i * angle + halfPi);
-            playerPositions[this.gameState.players[i]] = {x, y};
+            x = width / 2 + radius * Math.cos(i * playerOffsetAngle + halfPi);
+            y = height / 2 + radius * Math.sin(i * playerOffsetAngle + halfPi);
+            playerPositions[organisedPlayers[i].name] = {x, y};
         }
     }
 
@@ -275,6 +284,7 @@ let mouse = {x: 0, y: 0, isDown: false, card: null, onDown() {}, onUp() {}, onCl
 
 let thePlayer;
 let playerPositions = null; // {playerID: {x: 0, y: 0}}
+let playerOffsetAngle = 0;
 let canvas;
 let overlayHidden = false;
 
@@ -293,7 +303,7 @@ onReady(() => {
         }
         gameState.roomID = data.roomID;
         gameState.name = data.name;
-        if(!isArrayCombination(gameState.players, data.players)) playerPositions = null;
+        if(!isArrayCombination(gameState.players.map(p => p.name), data.players.map(p => p.name))) playerPositions = null;
         gameState.players = data.players;
         gameState.spectators = data.spectators;
         gameState.table = data.table;
@@ -394,14 +404,14 @@ onReady(() => {
             let card = mouse.card;
             let [cx, cy] = normaliseCoords(mouse.x, mouse.y);
             room.send("cardmove", {
-                name: thePlayer,
+                name: thePlayer.name,
                 cardID: card.cardID,
                 x: cx,
                 y: cy,
                 owner: null,
                 moving: true,
                 faceUp: card.faceUp,
-                culprit: thePlayer,
+                culprit: thePlayer.name,
             });
         }
     };
@@ -409,7 +419,7 @@ onReady(() => {
         if(mouse.card && mouse.isDown) {
             let card = mouse.card;
             room.send("cardmove", {
-                name: thePlayer,
+                name: thePlayer.name,
                 cardID: card.cardID,
                 moving: false,
                 faceUp: card.faceUp,
@@ -422,7 +432,7 @@ onReady(() => {
         if(mouse.card) {
             let card = mouse.card;
             room.send("cardmove", {
-                name: thePlayer,
+                name: thePlayer.name,
                 cardID: card.cardID,
                 moving: false,
                 culprit: null,
@@ -445,7 +455,7 @@ function enterRoom(room, name) {
     room.once("cards:enterroom", ({data}) => {
         if(data.success) {
             notifier.notify("Entering room...", "success");
-            thePlayer = data.name;
+            thePlayer = data.player;
             hideOverlay();
             canvas.redrawStoredCanvas();
             // gamestate will update
@@ -497,6 +507,14 @@ function getCardAt(x, y, normalised = false) {
         }
     }
     return [null, -1];
+}
+
+function getMyOffset() {
+    return playerOffsetAngle * (thePlayer?.offset ?? 0);
+}
+
+function canISeeCard(card) {
+    return canPlayerSeeCard(thePlayer?.name, card);
 }
 
 function canPlayerSeeCard(player, card) {
