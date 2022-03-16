@@ -72,8 +72,8 @@ class Room {
         else if(messageType === "drawcard") {
             let cardID = this.cards.cardsInDeck.pop();
             if(cardID === undefined) return this.gss.sendToAll("drawcard", {success: false, message: "No cards left in the deck"});
-            this.cards[cardID].x = message.x;
-            this.cards[cardID].y = message.y;
+            this.cards[cardID].r = message.r;
+            this.cards[cardID].d = message.d;
             // TODO: set to moving
             this.cards[cardID].owner = message.name;
             this.cards[cardID].faceUp = message.faceUp;
@@ -134,8 +134,8 @@ class Room {
                     cardID = `${d}.${s}.${c}`;
                     ret[cardID] = {
                         cardID: cardID,
-                        x: 0,
-                        y: 0,
+                        r: 0,
+                        d: 0,
                         faceUp: false,
                         owner: null,
                         moving: false,
@@ -149,8 +149,8 @@ class Room {
             cardID = `deck1.joker.joker${j}`;
             ret[cardID] = {
                 cardID: cardID,
-                x: 0,
-                y: 0,
+                r: 0,
+                d: 0,
                 faceUp: false,
                 owner: null,
                 moving: false,
