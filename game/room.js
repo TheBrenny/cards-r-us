@@ -12,7 +12,7 @@ class Room {
         this.jokers = parseInt(options?.jokers ?? 2);
         this.cards = Room.generateDeck(parseInt(options?.deckCount ?? 1), this.jokers);
         this.cards.cardsInDeck = this.cards.cardsInDeck.sort(() => Math.random() - 0.5);
-        this._players = {}; // {name: {ws: socket, name: "..."}}
+        this._players = {}; // {name: {ws: socket, name: "...", offset: degreeOffset}}
         this._spectators = [];
 
         let rm = this;
@@ -23,13 +23,15 @@ class Room {
             }
         });
         RoomMate.addRoom(this);
+
+        this._nextOffset = 0;
     }
 
     get state() {
         return {
             roomID: this.id,
             name: this.name,
-            players: Object.keys(this._players),
+            players: this.players,
             spectators: this._spectators.length,
             table: this.table,
             floor: this.floor,
@@ -50,8 +52,9 @@ class Room {
         }
         if(messageType === "enterroom") {
             try {
-                this.addPlayer(ws, message.name);
-                this.gss.send(ws, "enterroom", {success: true, name: message.name});
+                let player = Object.assign({}, this.addPlayer(ws, message.name));
+                delete player.ws;
+                this.gss.send(ws, "enterroom", {success: true, player});
                 this.gss.sendToAll("state", this.state);
             } catch(e) {
                 this.gss.send(ws, "enterroom", {success: false, message: e.message});
@@ -59,6 +62,7 @@ class Room {
         }
         else if(messageType === "cardmove") {
             // update internal state
+            // TODO: Move the redraw logic to the client side
             let redraw = this.cards[message.cardID].moving !== message.moving;
             redraw = redraw || this.cards[message.cardID].faceUp !== message.faceUp;
             Object.assign(this.cards[message.cardID], message);
@@ -68,8 +72,8 @@ class Room {
         else if(messageType === "drawcard") {
             let cardID = this.cards.cardsInDeck.pop();
             if(cardID === undefined) return this.gss.sendToAll("drawcard", {success: false, message: "No cards left in the deck"});
-            this.cards[cardID].x = message.x;
-            this.cards[cardID].y = message.y;
+            this.cards[cardID].r = message.r;
+            this.cards[cardID].d = message.d;
             // TODO: set to moving
             this.cards[cardID].owner = message.name;
             this.cards[cardID].faceUp = message.faceUp;
@@ -86,20 +90,35 @@ class Room {
 
     addPlayer(ws, name) {
         if(!!this._players[name] && !this._players[name].ws.destroyed) throw new Error(`Player ${name} already exists in room ${this.id}`);
-        this._players[name] = {ws, name};
-
+        this.fixPlayerOffsets();
+        this._players[name] = {ws, name, offset: this.nextOffset};
+        return this._players[name];
     }
     removePlayer(name, reason = "") {
         if(!this._players[name]) throw new Error(`Player ${name} does not exist in room ${this.id}`);
         this._players[name].ws.end(reason).destroy();
+        let p = this._players[name];
         delete this._players[name];
+        this.fixPlayerOffsets();
+        return p;
     }
     hasPlayer(name) {
         return this._players[name] !== undefined;
     }
 
+    fixPlayerOffsets() {
+        this._nextOffset = 0;
+        Object.values(this._players)
+            .sort((a, b) => a.offset - b.offset)
+            .forEach(p => p.offset = this.nextOffset);
+        return this._nextOffset;
+    }
+
     get players() {
-        return Object.values(this._players);
+        return Object.values(this._players).map(p => ({name: p.name, offset: p.offset})).sort((a, b) => a.offset - b.offset);
+    }
+    get nextOffset() {
+        return this._nextOffset++;
     }
 
     static generateDeck(deckCount, jokers) {
@@ -115,8 +134,8 @@ class Room {
                     cardID = `${d}.${s}.${c}`;
                     ret[cardID] = {
                         cardID: cardID,
-                        x: 0,
-                        y: 0,
+                        r: 0,
+                        d: 0,
                         faceUp: false,
                         owner: null,
                         moving: false,
@@ -130,8 +149,8 @@ class Room {
             cardID = `deck1.joker.joker${j}`;
             ret[cardID] = {
                 cardID: cardID,
-                x: 0,
-                y: 0,
+                r: 0,
+                d: 0,
                 faceUp: false,
                 owner: null,
                 moving: false,
