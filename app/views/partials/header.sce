@@ -6,7 +6,7 @@
         <title>Card Games Are Fun!</title>
         <link rel="stylesheet" href="/assets/css/normalize.css">
         <link rel="stylesheet" href="/assets/css/main.css">
-        <link rel="stylesheet" href="/assets/css/notifier.css">
+        <link rel="stylesheet" href="/assets/notifier/notifier.css">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
 
