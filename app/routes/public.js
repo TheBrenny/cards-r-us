@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const {Room, RoomMate} = require("../../game/room");
 const gss = require("../../game/gss");
-const {errors} = require("./errors/404");
+const {errors} = require("./express-errors/generic");
 const WordBuilder = require("mini-word-smith");
 
 router.use((req, res, next) => {
