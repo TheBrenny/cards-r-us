@@ -337,17 +337,6 @@ onReady(() => {
 
         if(data.redraw) canvas.redrawStoredCanvas();
     });
-    // TODO: Remove this because it's not used!
-    // room.on("cards:drawcard", ({data}) => {
-    //     if(data.success === false) {
-    //         notifier.notify(data.message, "error");
-    //         return;
-    //     }
-
-    //     gameState.cardOrder.push(data.cardID);
-    //     Object.assign(gameState.cards[data.cardID], data);
-    //     canvas.redrawStoredCanvas();
-    // });
 
     // Prepare interactive events
     document.addEventListener("mousedown", (e) => {
