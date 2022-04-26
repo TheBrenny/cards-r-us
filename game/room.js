@@ -89,9 +89,13 @@ class Room {
     }
 
     addPlayer(ws, name) {
-        if(!!this._players[name] && !this._players[name].ws.destroyed) throw new Error(`Player ${name} already exists in room ${this.id}`);
-        this.fixPlayerOffsets();
-        this._players[name] = {ws, name, offset: this.nextOffset};
+        if(!!this._players[name]) {
+            if(this._players[name].ws.readyState !== 3) throw new Error(`Player ${name} already exists in room ${this.id}`);
+            this._players[name].ws = ws;
+        } else {
+            this.fixPlayerOffsets();
+            this._players[name] = {ws, name, offset: this.nextOffset};
+        }
         return this._players[name];
     }
     removePlayer(name, reason = "") {
