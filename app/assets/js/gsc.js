@@ -1,19 +1,36 @@
 // Game Socket Client
 
-class GameSocketClient extends WebSocket {
+class GameSocketClient {
     constructor(id) {
-        // This'll give us the s: from https: and add it to ws, so it becomes wss://
-        super(`ws${location.protocol.substring("http".length)}//` + location.host + "/game/" + id);
-
         this.id = id;
 
+        // This'll give us the s: from https: and add it to ws, so it becomes wss://
+        this.socket = null;
+        this.connect();
+
         this.cardEvents = new GameEventEmitter();
+    }
+
+    connect() {
+        let target = `ws${location.protocol.substring("http".length)}//` + location.host + "/game/" + this.id
+        //connect ws
+        this.socket = new WebSocket(target);
 
         this.on('open', () => {
             notifier.notify("Client connected!", "verbose");
         });
         this.on('close', () => {
-            notifier.notify("Client disconnected!", "warning");
+            this.socket = null;
+
+            notifier.notify("Client disconnected!", "warning", [
+                {
+                    name: "Reconnect",
+                    type: "success",
+                    action: () => {
+                        this.connect();
+                    }
+                }
+            ]);
         });
         this.on('error', (err) => {
             notifier.notify("Client encountered an error: " + err?.message ?? "unknown", "error");
@@ -30,19 +47,23 @@ class GameSocketClient extends WebSocket {
 
     on(event, callback) {
         if(event.startsWith("cards:")) this.cardEvents.addEventListener(event.substring("cards:".length), callback);
-        else this.addEventListener(event, callback);
+        else {
+            this.socket.addEventListener(event, callback);
+        }
         return this;
     }
 
     once(event, callback) {
         if(event.startsWith("cards:")) this.cardEvents.addEventListener(event.substring("cards:".length), callback, {once: true});
-        else this.addEventListener(event, callback, {once: true});
+        else {
+            this.socket.addEventListener(event, callback, {once: true});
+        }
         return this;
     }
 
     send(messageType, data) {
-        if(!(data ?? false)) return super.send(messageType); // If there's no data, just send the messageType because it's probably the message
-        super.send(`cards:${messageType}:${JSON.stringify(data)}`);
+        if(!(data ?? false)) return this.socket.send(messageType); // If there's no data, just send the messageType because it's probably the message
+        this.socket.send(`cards:${messageType}:${JSON.stringify(data)}`);
     }
 }
 
