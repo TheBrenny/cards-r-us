@@ -143,7 +143,7 @@ class Room {
                         faceUp: false,
                         owner: null,
                         moving: false,
-                        culprint: null
+                        culprit: null
                     };
                     ret.cardsInDeck.push(cardID);
                 }
@@ -158,7 +158,7 @@ class Room {
                 faceUp: false,
                 owner: null,
                 moving: false,
-                culprint: null
+                culprit: null
             };
             ret.cardsInDeck.push(cardID);
         }

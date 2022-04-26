@@ -16,6 +16,8 @@ const cardHeight = cardWidth * cardRatio;
 
 const halfPi = Math.PI / 2;
 
+let backface;
+
 class Canvas {
     constructor(canvas, gameState) {
         this.canvas = canvas;
@@ -59,6 +61,7 @@ class Canvas {
 
     async render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if(!backface) backface = await getCardImage("back");
 
         // Floor, Table and static cards
         if(this.storedCanvasRedraw) {
@@ -118,7 +121,6 @@ class Canvas {
             }
 
             // Static cards
-            let backFace = await getCardImage("back");
             for(let i = 0; i < this.gameState.cardOrder.length; i++) {
                 let card = this.gameState.cards[this.gameState.cardOrder[i]];
                 if(card.moving) break; // don't draw moving cards
@@ -126,7 +128,7 @@ class Canvas {
                 try {
                     let cardImage;
                     if(canISeeCard(card)) cardImage = await getCardImage(card.cardID);
-                    else cardImage = backFace;
+                    else cardImage = backface;
                     let [cx, cy] = revertCoords(fromPolar(card.r, card.d - getMyOffset()));
                     this.storedCanvasCtx.drawImage(cardImage, cx - cardWidth / 2, cy - cardHeight / 2, cardWidth, cardHeight);
                 } catch(e) {
@@ -145,7 +147,9 @@ class Canvas {
             if(!card.moving) break; // we've already drawn the static cards
 
             try {
-                let cardImage = await getCardImage(card.faceUp ? card.cardID : "back");
+                let cardImage;
+                if(canISeeCard(card)) cardImage = await getCardImage(card.cardID);
+                else cardImage = backface;
                 let [cx, cy] = revertCoords(fromPolar(card.r, card.d - getMyOffset()));
                 this.ctx.drawImage(cardImage, cx - cardWidth / 2, cy - cardHeight / 2, cardWidth, cardHeight);
             } catch(e) {
@@ -186,9 +190,10 @@ class Canvas {
                 lines.push(`Card x: (os) (${cx.toFixed(5)}, ${cy.toFixed(5)})`);
                 lines.push("Card dims (real): " + `[${cardWidth.toFixed(3)}, ${cardHeight.toFixed(3)}]`);
                 lines.push("Card dims (norm): " + `[${(cardWidth / tableSize).toFixed(3)}, ${(cardHeight / tableSize).toFixed(3)}]`);
-                lines.push("Card faceUp: " + card.faceUp);
-                lines.push("Card moving: " + card.moving);
-                lines.push("Card owner: " + card.owner);
+                lines.push("Card faceUp:  " + card.faceUp);
+                lines.push("Card moving:  " + card.moving);
+                lines.push("Card owner:   " + card.owner);
+                lines.push("Card culprit: " + card.culprit);
                 lines.push("Card visible: " + canISeeCard(card));
             }
 
@@ -335,10 +340,10 @@ onReady(() => {
         // card.y = data.y ?? card.y;
         card.r = data.r ?? card.r;
         card.d = (data.d) ?? card.d;
-        card.faceUp = data.faceUp ?? card.faceUp;
-        card.owner = data.owner ?? card.owner;
-        card.moving = data.moving ?? card.moving;
-        card.culprit = data.culprit ?? card.culprit;
+        card.faceUp = data.faceUp !== undefined ? data.faceUp : card.faceUp;
+        card.owner = data.owner !== undefined ? data.owner : card.owner;
+        card.moving = data.moving !== undefined ? data.moving : card.moving;
+        card.culprit = data.culprit !== undefined ? data.culprit : card.culprit;
 
         let cardIndex = gameState.cardOrder.indexOf(data.cardID);
         if(cardIndex >= 0) gameState.cardOrder.splice(cardIndex, 1);
@@ -395,7 +400,19 @@ onReady(() => {
 
     mouse.onDown = () => {
         let [card, i] = getCardAtCartesian(mouse.x, mouse.y);
-        mouse.card = card;
+        if(card.culprit === null || card.culprit === thePlayer) {
+            mouse.card = card;
+            room.send("cardmove", {
+                name: thePlayer.name,
+                cardID: card.cardID,
+                r: card.r,
+                d: card.d,
+                owner: null,
+                moving: true,
+                faceUp: card.faceUp,
+                culprit: thePlayer.name,
+            });
+        }
     };
     mouse.onMove = (oldPos) => {
         if(mouse.card && mouse.isDown) {
@@ -523,8 +540,8 @@ function canPlayerSeeCard(player, card) {
     for(let pp of Object.entries(playerPositions)) {
         let [playerName, position] = pp;
         let [cx, cy] = revertCoords(fromPolar(card.r, card.d - getMyOffset()));
-        cx += cardWidth / 2;
-        cy += cardHeight / 2;
+        // cx += cardWidth / 2;
+        // cy += cardHeight / 2;
         // MAYBE: maybe there's a better way to do this rather than complex math and to/from polar?
         if(Math.sqrt(Math.pow(position.x - cx, 2) + Math.pow(position.y - cy, 2)) < playerRadius) {
             return player === playerName; // Make sure all the cards in my hand are face up, but if in someone else's hand, face down
