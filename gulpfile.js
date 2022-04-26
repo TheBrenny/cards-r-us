@@ -48,7 +48,7 @@ gulp.task("nodemon", function (cb) {
             "PORT": port
         },
         watch: ["*.js", "app/routes/"],
-        ignore: ["app/assets/js/", "gulpfile.js"]
+        ignore: ["app/assets/", "gulpfile.js"]
     }).on('start', function () {
         // to avoid nodemon being started multiple times
         // thanks @matthisk
