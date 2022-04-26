@@ -1,3 +1,5 @@
+const dpr = window.devicePixelRatio || 1;
+
 const tableMargin = 40;
 const tablePadding = 40;
 let tableSize = null;
@@ -9,7 +11,7 @@ let debugMode = false;
 let debugCard = -1;
 
 const cardRatio = 12 / 8;
-const cardWidth = 30;
+const cardWidth = 30 * dpr;
 const cardHeight = cardWidth * cardRatio;
 
 const halfPi = Math.PI / 2;
@@ -48,7 +50,7 @@ class Canvas {
 
         // Draw splash/loading
         this.ctx.fillStyle = "#fff";
-        this.ctx.font = "30px Rubik";
+        this.ctx.font = `${30 * dpr}px Rubik`;
         this.ctx.textAlign = "center";
         this.ctx.fillText("Loading...", this.canvas.width / 2, this.canvas.height / 2);
 
@@ -110,7 +112,7 @@ class Canvas {
             for(let i = 0; i < numPlayers; i++) {
                 pp = ppEntries[i];
                 this.storedCanvasCtx.fillStyle = "#fff";
-                this.storedCanvasCtx.font = "15px Rubik";
+                this.storedCanvasCtx.font = `${15 * dpr}px Rubik`;
                 this.storedCanvasCtx.textAlign = "center";
                 this.storedCanvasCtx.fillText(pp[0], pp[1].x, pp[1].y);
             }
@@ -176,11 +178,12 @@ class Canvas {
                 let card = this.gameState.cards[this.gameState.cardOrder[debugCard]];
                 lines.push("Card: " + card.cardID + ` [${debugCard}]`);
                 lines.push(`Card: (${card.r.toFixed(5)}, ${card.d.toFixed(5)})`);
-                lines.push(`Offset:         (${(card.d - getMyOffset()).toFixed(5)} (o / s))`); // Offset to make it in line with line above
+                let offset = (card.d - getMyOffset());
+                lines.push(`Offset:       (${offset >= 0 ? " " : ""}${offset.toFixed(5)}) (os)`); // Offset to make it in line with line above
                 let [cx, cy] = fromPolar(card.r, card.d);
-                lines.push(`Card x: (${cx.toFixed(5)}, ${cy.toFixed(5)})`);
+                lines.push(`Card x:      (${cx.toFixed(5)}, ${cy.toFixed(5)})`);
                 [cx, cy] = fromPolar(card.r, card.d - getMyOffset());
-                lines.push(`Card x (offset): (${cx.toFixed(5)}, ${cy.toFixed(5)})`);
+                lines.push(`Card x: (os) (${cx.toFixed(5)}, ${cy.toFixed(5)})`);
                 lines.push("Card dims (real): " + `[${cardWidth.toFixed(3)}, ${cardHeight.toFixed(3)}]`);
                 lines.push("Card dims (norm): " + `[${(cardWidth / tableSize).toFixed(3)}, ${(cardHeight / tableSize).toFixed(3)}]`);
                 lines.push("Card faceUp: " + card.faceUp);
@@ -190,14 +193,14 @@ class Canvas {
             }
 
             this.ctx.fillStyle = "#0005";
-            this.ctx.fillRect(0, 0, 320, (lines.length + 1) * 20);
+            this.ctx.fillRect(0, 0, 320 * dpr, (lines.length + 1) * 15 * dpr);
 
             this.ctx.fillStyle = "#fff";
-            this.ctx.font = "15px Consolas";
+            this.ctx.font = `${15 * dpr}px Consolas`;
             this.ctx.textAlign = "left";
             for(let line = 0; line < lines.length; line++) {
                 if(lines[line] === null) continue;
-                this.ctx.fillText(lines[line], 10, (line + 1) * 20);
+                this.ctx.fillText(lines[line], 10, (line + 1) * 15 * dpr);
             }
         }
 
@@ -239,10 +242,16 @@ class Canvas {
     resize() {
         playerPositions = null;
         playerRadius = null;
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth * dpr;
+        this.canvas.height = window.innerHeight * dpr;
         this.storedCanvas.width = this.canvas.width;
         this.storedCanvas.height = this.canvas.height;
+        // this.ctx.scale(dpr, dpr);
+        // this.storedCanvasCtx.scale(dpr, dpr);
+        this.canvas.style.width = window.innerWidth + "px";
+        this.canvas.style.height = window.innerHeight + "px";
+        this.storedCanvas.style.width = this.canvas.style.width;
+        this.storedCanvas.style.height = this.canvas.style.height;
         tableSize = Math.min(this.canvas.width, this.canvas.height);
         this.redrawStoredCanvas();
     }
@@ -341,8 +350,8 @@ onReady(() => {
     // Prepare interactive events
     document.addEventListener("mousedown", (e) => {
         if(!overlayHidden) return;
-        mouse.x = e.offsetX;
-        mouse.y = e.offsetY;
+        mouse.x = e.offsetX * dpr;
+        mouse.y = e.offsetY * dpr;
         mouse.isDown = true;
         mouse.down = {x: mouse.x, y: mouse.y};
         mouse.onDown();
@@ -352,8 +361,8 @@ onReady(() => {
         if(mouse.isDown && mouse.x === mouse.down.x && mouse.y === mouse.down.y) {
             mouse.onClick();
         } else {
-            mouse.x = e.offsetX;
-            mouse.y = e.offsetY;
+            mouse.x = e.offsetX * dpr;
+            mouse.y = e.offsetY * dpr;
             mouse.onUp();
         }
         mouse.isDown = false;
@@ -361,8 +370,8 @@ onReady(() => {
     document.addEventListener("mousemove", (e) => {
         if(!overlayHidden) return;
         let oldPos = {x: mouse.x, y: mouse.y};
-        mouse.x = e.offsetX;
-        mouse.y = e.offsetY;
+        mouse.x = e.offsetX * dpr;
+        mouse.y = e.offsetY * dpr;
         mouse.onMove(oldPos);
     });
     document.addEventListener("keydown", (e) => {
