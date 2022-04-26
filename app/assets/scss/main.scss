@@ -1,18 +1,75 @@
-$pistachio: #8acd6dff;
-$highlighted-pistachio: #5aa739ff;
-$tomato: #fe6448ff;
-$highlighted-tomato: #f42601ff;
-$black: #222222; // Text color
-$notblack: #444444;
-$lightgrey: #cccccc;
-$grey: #aaaaaa; // White could be accent?
-$darkgrey: #777777;
-$white: #efefef; // White could be accent?
-// $alphawhite: change-color(#EFEFEF, $alpha: 0.2); // White could be accent?
+body {
+    // These are the RGB values for the colours
+    --pistachio: 138, 205, 109;
+    --highlighted-pistachio: 90, 167, 57;
+    --tomato: 255, 99, 71;
+    --highlighted-tomato: 245, 37, 0;
+    --black: 34, 34, 34;
+    --notblack: 68, 68, 68;
+    --grey: 170, 170, 170;
+    --darkgrey: 119, 119, 119;
+    --lightgrey: 204, 204, 204;
+    --white: 239, 239, 239;
+    --pure-white: 255, 255, 255;
 
-html {
-    background: $white;
-    color: $black;
+    &.darkmode {
+        // These are the RGB values for the colours
+        --black: 255, 255, 255;
+        --notblack: 239, 239, 239;
+        --grey: 204, 204, 204;
+        --darkgrey: 119, 119, 119;
+        --lightgrey: 170, 170, 170;
+        --white: 68, 68, 68;
+        --pure-white: 34, 34, 34;
+    }
+
+    .darkmodeToggle {
+        z-index: 10;
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1em;
+        height: 1em;
+        font-size: 3em;
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 0.25em;
+        background: rgb(var(--notblack));
+        transition: background 0.3s ease-in-out;
+
+        &::before,
+        &::after {
+            font-variant: unicase;
+            display: inline-block;
+            position: absolute;
+            top: 0.9em;
+            width: 1em;
+            line-height: 1em;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+        &::before {
+            content: "🌓";
+            transform: rotateZ(0deg) translateY(-1em);
+        }
+        &::after {
+            content: "🌞";
+            transform: rotateZ(-90deg) translateY(-1em);
+        }
+    }
+    &.darkmode {
+        .darkmodeToggle::before {
+            transform: rotateZ(90deg) translateY(-1em);
+        }
+        .darkmodeToggle::after {
+            transform: rotateZ(-00deg) translateY(-1em);
+        }
+    }
+}
+body {
+    background: rgb(var(--white));
+    color: rgb(var(--black));
 }
 
 .homeContainer {
@@ -85,7 +142,7 @@ html {
     .overlayContent {
         max-width: 35%;
         max-height: 50%;
-        background: $grey;
+        background: rgb(var(--white));
         display: flex;
         flex: 1 1 0;
         overflow-y: auto;
@@ -165,12 +222,20 @@ vr {
 }
 
 blockquote.error {
-    background: $grey;
+    background: rgb(var(--grey));
     padding: 1rem 1.5rem;
     border-left: 0.5rem solid;
     border-radius: 0.5rem;
-    border-image: linear-gradient(to bottom, $highlighted-tomato, $tomato) 1 100%;
-    color: $notblack;
+    border-image: linear-gradient(to bottom, rgb(var(--highlighted-tomato)), rgb(var(--tomato))) 1 100%;
+    color: rgb(var(--notblack));
+}
+
+body canvas {
+    transition: filter 0.3s ease-in-out;
+    filter: invert(0);
+}
+body.darkmode canvas {
+    filter: invert(1);
 }
 
 input,
@@ -182,29 +247,30 @@ textarea {
     display: block;
     box-sizing: border-box;
     transition: border 0.2s;
-    border-bottom: 0.2em solid rgba($notblack, 0);
+    border-bottom: 0.2em solid rgb(var(--notblack), 0);
+    background: rgb(var(--pure-white));
 
     &[disabled] {
-        color: $notblack;
+        color: rgb(var(--notblack));
         font-weight: 100;
         font-style: italic;
 
         &:hover,
         &:focus {
-            border-bottom: 0.2em solid $tomato !important;
+            border-bottom: 0.2em solid rgb(var(--tomato)) !important;
         }
     }
 
     &:hover,
     &:focus {
-        border-bottom: 0.2em solid $notblack;
+        border-bottom: 0.2em solid rgb(var(--notblack));
         outline: none;
     }
 }
 
 .btn,
 input[type="submit"] {
-    background: $pistachio;
+    background: rgb(var(--pistachio));
     padding: 1rem;
     border-radius: 0.6rem;
     transition: 0.2s ease-out;
@@ -213,7 +279,7 @@ input[type="submit"] {
     user-select: none;
     text-align: center;
     text-decoration: none;
-    color: $black;
+    color: rgb(var(--black));
 
     display: flex;
     justify-content: center;
@@ -232,7 +298,7 @@ input[type="submit"] {
     }
 
     &.red {
-        background: $tomato;
+        background: rgb(var(--tomato));
     }
 }
 
@@ -254,8 +320,8 @@ input[type="submit"] {
     justify-content: space-between;
     flex-direction: column;
 
-    box-shadow: 0 5px 10px $darkgrey;
-    background-color: $white;
+    box-shadow: 0 5px 10px rgb(var(--darkgrey));
+    background-color: rgb(var(--white));
 
     width: 70%;
     max-width: 1020px;
@@ -263,16 +329,16 @@ input[type="submit"] {
     padding: 20px;
 
     .preWrap {
-        background: $lightgrey;
+        background: rgb(var(--lightgrey));
         border-radius: 0.5em;
-        box-shadow: inset -5px 0 20px -5px $darkgrey;
+        box-shadow: inset -5px 0 20px -5px rgb(var(--darkgrey));
         padding-bottom: 0.6em;
 
         pre {
             overflow-x: scroll;
             padding: 1em;
             padding-bottom: 0.5em;
-            color: $darkgrey;
+            color: rgb(var(--darkgrey));
 
             &::-webkit-scrollbar {
                 width: 0.75em;
@@ -280,12 +346,12 @@ input[type="submit"] {
             }
 
             &::-webkit-scrollbar-thumb {
-                background-color: $grey;
+                background-color: rgb(var(--grey));
                 border-radius: 10em;
                 margin: 2em;
 
                 &:hover {
-                    background-color: $darkgrey;
+                    background-color: rgb(var(--darkgrey));
                 }
             }
 
@@ -295,7 +361,7 @@ input[type="submit"] {
             }
 
             span.highlight {
-                color: $black;
+                color: rgb(var(--black));
             }
         }
     }
