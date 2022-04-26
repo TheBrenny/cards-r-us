@@ -36,7 +36,12 @@ body {
         overflow: hidden;
         border-radius: 0.25em;
         background: rgb(var(--notblack));
-        transition: background 0.3s ease-in-out;
+        transition: background 0.3s ease-in-out, opacity 0.2s ease-out;
+        opacity: 0.5;
+
+        &:hover {
+            opacity: 1;
+        }
 
         &::before,
         &::after {
@@ -232,10 +237,10 @@ blockquote.error {
 
 body canvas {
     transition: filter 0.3s ease-in-out;
-    filter: invert(0);
+    filter: contrast(1) brightness(1);
 }
 body.darkmode canvas {
-    filter: invert(1);
+    filter: contrast(1.5) brightness(0.5);
 }
 
 input,
