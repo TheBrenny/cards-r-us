@@ -1,8 +1,9 @@
 ## Scratch Pad
 
-- [ ] When a player is added/removed, offset all cards by the difference in offsetAngle on the server side, and resend all card states
-- [ ] Don't allow players to move "moving:true" cards if they're not the culprit of them (stop card stealing)
 - [ ] Take advantage of touch events somehow!
+- [ ] Theres a bug where the client disconnects
+  - [ ] This is probably because there's no ping events happening.
+  - [ ] Maybe there's a setting we can change to make it work
 
 ## Must Have
 
