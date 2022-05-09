@@ -22,6 +22,11 @@ class Room {
                 rm.gss.send(ws, "state", rm.state);
             }
         });
+        this.pingInterval = setInterval(() => {
+            // tap into the socketServer so we send raw data
+            this.gss.socketServer.sendToAll("ping");
+        }, options?.pingInterval ?? 30 * 1000);
+        // set up a ping timer here for every 30s to sendToAll: "ping", expect "pong"
         RoomMate.addRoom(this);
 
         this._nextOffset = 0;

@@ -39,6 +39,7 @@ class GameSocketClient {
         });
         this.on('message', (event) => {
             let msg = event.data;
+            if(msg === "ping") this.socket.send("pong");
             console.log(msg);
             msg = msg.split(":");
             if(msg[0] == "cards") this.cardEvents.emit(msg[1], JSON.parse(msg.slice(2).join(":")));
